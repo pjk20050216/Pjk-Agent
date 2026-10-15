@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+.venv/
+.idea/
+chroma_db/
+data/app.db
+data/uploads/*
+!data/uploads/.gitkeep
+logs/*
+!logs/.gitkeep
+.env
+*.log
+
+# 编辑器 / 工具的本机配置（含本机路径，不应共享）
+.claude/settings.local.json

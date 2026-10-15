@@ -1,0 +1,96 @@
+# 用于管理大语言模型的接入设置
+
+llm:
+  active_provider: 0 # 意味着系统默认使用列表中的第一个提供商，即“Qwen (DashScope)
+  providers:
+    - name: "Qwen (DashScope)"
+      base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+      api_key_env: "DASHSCOPE_API_KEY"
+      default_model: "qwen-max"
+      # 意图识别专用小模型（低延迟）；为空则回退 default_model
+      # qwen-turbo 虽在模型列表中，但实测持续 429（账号无额度），改用 qwen-flash（实测 ~277ms）
+      classifier_model: "qwen-flash"
+      # 文本转向量模型
+      embedding_model: "text-embedding-v3"
+      # DashScope 兼容模式不接受「整数 token 数组」形式的 embedding 输入，
+      # 故必须关闭 langchain 的 tiktoken 预分词（默认 false）。
+      # 若改用 OpenAI 官方端点，可设为 true 以启用其分词优化。
+      embedding_check_ctx_length: false
+    - name: "OpenAI GPT-4o"
+      base_url: "https://api.openai.com/v1"
+      api_key_env: "OPENAI_API_KEY"
+      default_model: "gpt-4o"
+      classifier_model: "gpt-4o-mini"
+
+      embedding_model: "text-embedding-3-small"
+      # OpenAI 官方端点接受 token 数组，可启用其分词优化
+      embedding_check_ctx_length: true
+    - name: "Custom OpenAI-Compatible"
+      base_url: "http://localhost:11434/v1"
+      api_key_env: "CUSTOM_API_KEY"
+      default_model: "llama3"
+      classifier_model: "llama3"
+      embedding_model: "nomic-embed-text"
+
+# Redis 缓存配置
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: ""
+  ttl:
+    llm: 3600
+    embedding: 3600
+    rag: 1800
+    tool: 3600
+    route_static: 3600
+    route_user: 30
+    websearch: 900
+
+# 网关配置
+gateway:
+  enabled: true
+
+# 速率限制（网关中间件使用）
+rate_limit:
+  authenticated: "100/minute"
+  unauthenticated: "30/minute"
+  llm_concurrency: 5
+
+# 熔断器（保护 LLM API 调用）
+circuit_breaker:
+  enabled: true
+  failure_threshold: 5
+  recovery_timeout: 60
+
+# RAG 防幻觉配置
+rag:
+  relevance_threshold: 0.45
+  top_k: 6
+
+# Elasticsearch 全文检索（与 Chroma 并行混合检索）
+elasticsearch:
+  enabled: true
+  url: "http://localhost:9200"
+  index: "devflow_documents"
+  hybrid_enabled: true
+  es_top_k: 6
+  rrf_k: 60
+
+# 联网搜索（博查 Bocha）
+web_search:
+  enabled: true
+  base_url: "https://api.bochaai.com/v1/web-search"
+  count: 5
+  timeout: 15
+
+# 意图识别（防注入）：正则过滤 + LLM 语义分类 + Prompt 护栏
+intent_guard:
+  enabled: true
+  regex_enabled: true
+  llm_enabled: true
+  llm_timeout_ms: 1500
+  # LLM 分类触发策略：always（每条消息）| first_turn_or_long（默认，仅首轮或长输入）| off
+  llm_trigger: "first_turn_or_long"
+  # first_turn_or_long 策略下，超过该字符数的输入也触发 LLM 分类
+  llm_long_input_threshold: 200

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat Agent</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/lib/github-dark.min.css">
+</head>
+<body>
+    <!-- Auth Container -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <h1>AI Chat Agent</h1>
+                <p>智能对话助手</p>
+            </div>
+            <div class="auth-tabs">
+                <button class="auth-tab active" data-tab="login">Login</button>
+                <button class="auth-tab" data-tab="register">Register</button>
+            </div>
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter password" required>
+                </div>
+                <div id="login-error" class="form-error"></div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <form id="register-form" class="auth-form hidden">
+                <div class="form-group">
+                    <label for="register-username">Username</label>
+                    <input type="text" id="register-username" placeholder="Choose username" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-email">Email</label>
+                    <input type="email" id="register-email" placeholder="Enter email" required>
+                </div>
+                <div class="form-group">
+                    <label for="register-password">Password</label>
+                    <input type="password" id="register-password" placeholder="Choose password" required minlength="6">
+                </div>
+                <div id="register-error" class="form-error"></div>
+                <button type="submit" class="btn btn-primary">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <button id="new-chat-btn" class="btn btn-new-chat">+ New Chat</button>
+            </div>
+            <div class="sidebar-conversations" id="conversation-list"></div>
+            <div class="sidebar-footer">
+                <button id="upload-doc-btn" class="btn btn-sidebar-action">📄 Documents</button>
+                <div class="user-info">
+                    <span id="sidebar-username"></span>
+                    <button id="logout-btn" class="btn btn-logout">Logout</button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="main-content">
+            <header class="chat-header">
+                <button id="sidebar-toggle" class="btn btn-icon">☰</button>
+                <h2 id="chat-title">AI Chat Agent</h2>
+                <div class="chat-header-actions">
+                    <button id="agent-mode-toggle" class="btn btn-agent-mode" title="Switch to Agent mode">
+                        🤖 Agent Mode
+                    </button>
+                </div>
+            </header>
+            <div id="chat-messages" class="chat-messages">
+                <div class="welcome-screen" id="welcome-screen">
+                    <div class="welcome-icon">🤖</div>
+                    <h2>Hello! How can I help you today?</h2>
+                    <p>Start a conversation or select one from the sidebar</p>
+                    <div class="suggestions">
+                        <button class="suggestion-chip" data-text="Explain quantum computing in simple terms">Explain quantum computing</button>
+                        <button class="suggestion-chip" data-text="Write a Python script to sort a list">Write Python sorting code</button>
+                        <button class="suggestion-chip" data-text="Help me write a professional email">Help write an email</button>
+                        <button class="suggestion-chip" data-text="What are the best practices for REST API design?">REST API best practices</button>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-input-container">
+                    <div id="attached-docs" class="attached-docs"></div>
+                    <div class="input-row">
+                        <textarea id="chat-input" placeholder="Type your message..." rows="1"></textarea>
+                        <button id="send-btn" class="btn btn-send" disabled>Send</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Upload Modal -->
+    <div id="upload-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Document Management</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="upload-zone" id="upload-zone">
+                    <p>📁 Drag & drop files here or click to upload</p>
+                    <p class="upload-hint">Supports PDF, TXT (max 20MB)</p>
+                    <input type="file" id="file-input" accept=".pdf,.txt" hidden>
+                </div>
+                <div id="upload-progress" class="upload-progress hidden">
+                    <div class="progress-bar"><div class="progress-fill"></div></div>
+                </div>
+                <div id="document-list" class="document-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/lib/marked.min.js"></script>
+    <script src="/static/lib/highlight.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/markdown.js"></script>
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/conversations.js"></script>
+    <script src="/static/js/documents.js"></script>
+    <script src="/static/js/chat.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
