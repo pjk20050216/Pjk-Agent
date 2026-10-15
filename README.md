@@ -168,4 +168,13 @@ python main.py
 
 ## License
 
-MIT
+本项目采用 [MIT License](LICENSE)。
+
+`static/lib/` 下的第三方前端库保留各自原有许可：
+
+| 文件 | 许可 | 版权 |
+|---|---|---|
+| `marked.min.js` | MIT | © 2011-2025 Christopher Jeffrey |
+| `highlight.min.js` | BSD-3-Clause | © highlight.js contributors |
+| `github-dark.min.css` | BSD-3-Clause | highlight.js 主题 |
+
