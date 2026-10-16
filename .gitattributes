@@ -1,0 +1,42 @@
+# 统一换行符策略，避免 Windows/Linux 协作时反复出现 LF/CRLF 转换警告
+#
+# - 默认：检出时用当前平台的原生换行符（Windows 为 CRLF），仓库内统一存 LF
+# - 强制 LF：这些文件若带 CRLF 会导致解析或执行问题
+* text=auto eol=lf
+
+# Shell / 容器脚本必须为 LF，否则在 Linux 容器内会报 "bad interpreter"
+*.sh            text eol=lf
+Dockerfile      text eol=lf
+*.dockerfile    text eol=lf
+docker-compose* text eol=lf
+
+# Windows 专用脚本保留 CRLF
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# 二进制文件：禁止任何换行符转换，否则文件会被损坏
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.pdf           binary
+*.zip           binary
+*.gz            binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+
+# 数据库与向量索引文件（正常情况下已被 .gitignore 排除，此处作为兜底）
+*.db            binary
+*.sqlite3       binary
+*.bin           binary
+
+# 语言识别：避免 GitHub 把前端库统计进项目语言占比
+static/lib/*.js    linguist-vendored
+static/lib/*.css   linguist-vendored
+
+# 文档不计入语言统计
+*.md            linguist-documentation
+docs/*          linguist-documentation

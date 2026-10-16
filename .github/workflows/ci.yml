@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一分支的连续推送只保留最新一次运行，避免排队浪费
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: 静态检查（Python ${{ matrix.python-version }}）
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        # pyproject.toml 要求 >=3.13
+        python-version: ["3.13"]
+
+    env:
+      # CI 中不存在 .env，显式关闭外部依赖探测，避免无谓的连接超时
+      ES_ENABLED: "false"
+      WEB_SEARCH_ENABLED: "false"
+      BEHIND_GATEWAY: "true"
+      JWT_SECRET_KEY: "ci-test-secret-not-for-production"
+      PYTHONIOENCODING: "utf-8"
+      # 让 Python 输出不被缓冲，日志实时可见
+      PYTHONUNBUFFERED: "1"
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: 安装 Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: 安装依赖（按 uv.lock 精确复现）
+        run: uv sync --frozen --all-extras
+
+      - name: 静态检查
+        run: uv run python scripts/ci_checks.py
+
+  frontend:
+    name: 前端语法检查
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 检查前端 JS 语法
+        run: |
+          set -e
+          fail=0
+          for f in static/js/*.js; do
+            if node --check "$f" 2>/dev/null; then
+              echo "  OK    $f"
+            else
+              echo "  FAIL  $f"
+              node --check "$f" || true
+              fail=1
+            fi
+          done
+          exit $fail
+
+  secrets:
+    name: 密钥泄漏扫描
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          # 扫描完整历史，而不只是最新一次提交
+          fetch-depth: 0
+
+      - name: 确认 .env 未被纳入版本控制
+        run: |
+          if git ls-files --error-unmatch .env 2>/dev/null; then
+            echo "::error::.env 被提交进了仓库，必须立即移除并轮换密钥！"
+            exit 1
+          fi
+          echo "  .env 未被跟踪，符合预期"
+
+      - name: 扫描历史提交中的疑似密钥
+        run: |
+          # 匹配 OpenAI / DashScope 风格的长 token
+          pattern='sk-[A-Za-z0-9_-]{20,}'
+          if git grep -nE "$pattern" $(git rev-list --all) -- \
+               ':!*.min.js' ':!*.min.css' ':!uv.lock' 2>/dev/null; then
+            echo "::error::在 Git 历史中发现疑似真实密钥"
+            exit 1
+          fi
+          echo "  历史中未发现疑似密钥"
+
+      - name: 确认敏感文件均在 .gitignore 中
+        run: |
+          fail=0
+          for f in .env data/app.db chroma_db logs; do
+            if ! grep -qE "^${f%%/*}" .gitignore; then
+              echo "::warning::$f 可能未被 .gitignore 覆盖"
+            fi
+          done
+          for f in .env; do
+            if git ls-files --error-unmatch "$f" 2>/dev/null; then
+              echo "::error::$f 被跟踪"
+              fail=1
+            fi
+          done
+          exit $fail
