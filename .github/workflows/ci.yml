@@ -51,6 +51,9 @@ jobs:
       - name: 静态检查
         run: uv run python scripts/ci_checks.py
 
+      - name: 单元测试（离线，不依赖 Redis / ES / Milvus / Kafka）
+        run: uv run python -m unittest discover -s tests -v
+
   frontend:
     name: 前端语法检查
     runs-on: ubuntu-latest

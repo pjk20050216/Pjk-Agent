@@ -1,4 +1,4 @@
-"""DevFlow AI 一键启动 —— 同时运行网关（8000 外网）和后端（8001 内网）。"""
+"""风控策略智能运维多智能体系统一键启动 —— 同时运行网关（8000 外网）和后端（8001 内网）。"""
 import multiprocessing
 import signal
 import sys
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     multiprocessing.freeze_support()
 
     print("=" * 50)
-    print("  DevFlow AI")
+    print("  风控策略智能运维多智能体系统")
     print(f"  Gateway : http://0.0.0.0:8000  (public)")
     print(f"  Backend : http://127.0.0.1:8001 (internal)")
     print(f"  Docs    : http://localhost:8000/docs")

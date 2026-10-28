@@ -94,3 +94,140 @@ intent_guard:
   llm_trigger: "first_turn_or_long"
   # first_turn_or_long 策略下，超过该字符数的输入也触发 LLM 分类
   llm_long_input_threshold: 200
+
+# ============================================================================
+# 风控策略智能运维多智能体系统
+# 所有字段均可用 HARNESS_ 前缀的环境变量覆盖，例如 HARNESS_MAX_PARALLEL=8
+# ============================================================================
+harness:
+  enabled: true
+  # 关闭后强制走确定性回退（离线演示 / CI / 故障演练），不发起任何 LLM 请求
+  llm_enabled: true
+  # 运行时工作根目录：每个 run 一个子目录，虚拟文件系统落在其中
+  workspace_root: "data/harness"
+  # 技能目录（SKILL.md + 资源文件）
+  skills_dir: "skills"
+  # 子 Agent 并发上限（asyncio 信号量）
+  max_parallel_subagents: 4
+  # 单次运行最多拆解任务数
+  max_tasks: 12
+  # 单个 Agent 的工具调用最大轮次
+  max_tool_iterations: 6
+  # 运行超时（秒）
+  run_timeout_seconds: 1800
+  # 单文件写入上限（字节）
+  vfs_max_file_bytes: 2000000
+
+  context:
+    # 主 Agent 上下文预算（token 估算值）
+    budget_tokens: 24000
+    # 子 Agent 回传摘要的最大字符数（控制主上下文污染）
+    summary_max_chars: 1200
+    # 注入模型的历史消息条数上限
+    max_history_messages: 20
+
+  memory:
+    # 短期记忆（Redis）TTL：对话、任务计划、审批断点、临时数据
+    short_term_ttl: 86400
+    # 长期记忆（Milvus）检索条数
+    long_term_top_k: 5
+    # 任务结束后是否自动复盘沉淀经验
+    distill_enabled: true
+    # Milvus 不可用时的本地降级目录（JSONL）
+    fallback_dir: "data/harness/memories"
+
+  sandbox:
+    enabled: true
+    # opensandbox = 调用 OpenSandbox 服务；local = 本地受限子进程（自动回退）
+    provider: "opensandbox"
+    base_url: "http://127.0.0.1:8080"
+    api_key: ""
+    namespace: "default"
+    image: "python:3.12-slim"
+    # 单条命令超时（秒）与输出截断
+    command_timeout: 60
+    max_output_bytes: 65536
+    # 沙箱默认禁止外网
+    allow_network: false
+    # 沙箱会话存活时间（秒）
+    workspace_ttl: 3600
+    # 允许执行的命令白名单（local provider 生效）
+    allowed_commands: ["python", "python3", "pytest", "cat", "ls", "dir", "echo", "type", "findstr", "grep"]
+    # 命中即拒绝的高危模式（网络下载 / 提权 / 破坏性删除 / 反弹 shell）
+    denied_patterns:
+      - "rm\\s+-rf\\s+/"
+      - "curl\\s+.*\\|\\s*(ba)?sh"
+      - "wget\\s+.*\\|\\s*(ba)?sh"
+      - "nc\\s+-e"
+      - "bash\\s+-i\\s+>&"
+      - "mkfs"
+      - "dd\\s+if="
+      - "chmod\\s+777\\s+/"
+      - "shutdown|reboot"
+      - "powershell\\s+-enc"
+
+  milvus:
+    enabled: true
+    uri: "http://localhost:19530"
+    token: ""
+    collection: "harness_memories"
+    # 向量维度需与 embedding 模型一致（text-embedding-v3 默认 1024）
+    dim: 1024
+    top_k: 5
+
+  kafka:
+    enabled: true
+    bootstrap_servers: "localhost:9092"
+    topic_audit: "harness.audit"
+    topic_trace: "harness.trace"
+    client_id: "harness-runtime"
+    # Kafka 不可用时的本地落盘缓冲（公司链路追踪平台的兜底）
+    buffer_dir: "data/harness/audit"
+
+  approvals:
+    enabled: true
+    # 审批超时（秒），超时自动拒绝
+    ttl_seconds: 1800
+    # 低风险动作自动放行（仅限明确列出的动作）
+    auto_approve_actions: []
+    # 必须人工审批的动作
+    required_actions:
+      - "rule.publish"
+      - "rule.gray_release"
+      - "sandbox.exec"
+      - "file.promote"
+      - "policy.write"
+      - "java.tool.invoke"
+
+  tracing:
+    enabled: true
+    jsonl_dir: "data/traces"
+    sample_rate: 1.0
+    # 内存中保留的最大事件数（供 API 查询）
+    max_events: 5000
+
+  java_bridge:
+    enabled: false
+    base_url: "http://127.0.0.1:8081"
+    # 与 Java 侧共享的 HMAC 密钥，用于内部接口互信
+    shared_secret: ""
+    timeout: 10
+    manifest_path: "/internal/harness/tools"
+
+  # 外部数据采集（web_search 复用博查；web_fetch 抓取网页正文）
+  web:
+    enabled: true
+    fetch_enabled: true
+    timeout: 20
+    max_bytes: 2000000
+    max_chars: 12000
+    max_redirects: 3
+    # 为空表示允许公网；SSRF 防护始终拒绝回环/私网/链路本地地址
+    allowed_domains: []
+    blocked_domains: ["localhost", "127.0.0.1", "0.0.0.0", "::1"]
+    allowed_ports: [80, 443]
+    user_agent: "AgentHarness/1.0 (+risk-strategy-ops)"
+    cache_ttl: 900
+    max_sources: 8
+    # 搜索不可用且未给 URL 时回退到内部规则库
+    offline_fallback: true

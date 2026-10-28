@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>风控策略智能运维多智能体系统</title>
+    <link rel="stylesheet" href="/static/lib/github-dark.min.css">
+    <link rel="stylesheet" href="/static/css/harness.css">
+</head>
+<body>
+    <!-- 登录 -->
+    <div id="hx-login" class="hx-login hidden">
+        <form id="hx-login-form" class="hx-login-card">
+            <h1>风控策略智能运维<br>多智能体系统</h1>
+            <p>风控策略运维 · 多智能体协作</p>
+            <label>用户名<input id="hx-login-username" autocomplete="username" required></label>
+            <label>密码<input id="hx-login-password" type="password" autocomplete="current-password" required></label>
+            <div id="hx-login-error" class="hx-error"></div>
+            <button type="submit" class="hx-btn primary">登录</button>
+            <a class="hx-link" href="/">返回对话工作台</a>
+        </form>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="hx-app" class="hx-app hidden">
+        <header class="hx-topbar">
+            <div class="hx-brand">
+                <span class="hx-logo">H</span>
+                <div>
+                    <strong>风控策略智能运维多智能体系统</strong>
+                    <small>风控策略运维 · 多智能体协作</small>
+                </div>
+            </div>
+            <div id="hx-status" class="hx-status"></div>
+            <div class="hx-topbar-actions">
+                <a class="hx-btn ghost" href="/">对话工作台</a>
+                <button id="hx-refresh" class="hx-btn ghost">刷新</button>
+                <button id="hx-new-run" class="hx-btn primary">+ 新建运行</button>
+            </div>
+        </header>
+
+        <div class="hx-shell">
+            <!-- 运行列表 -->
+            <aside class="hx-sidebar">
+                <div class="hx-sidebar-head">
+                    <span>运行记录</span>
+                    <span id="hx-run-count" class="hx-muted">0</span>
+                </div>
+                <div id="hx-runs" class="hx-runs"></div>
+            </aside>
+
+            <!-- 主区 -->
+            <main class="hx-main">
+                <section class="hx-run-head">
+                    <div>
+                        <h2 id="hx-run-title">选择一个运行，或新建运行</h2>
+                        <div id="hx-run-meta" class="hx-run-meta"></div>
+                    </div>
+                    <div id="hx-run-actions" class="hx-run-actions"></div>
+                </section>
+
+                <section class="hx-board" id="hx-board">
+                    <div class="hx-board-col" data-status="pending">
+                        <h4>待执行 <span id="hx-cnt-pending">0</span></h4>
+                        <div id="hx-col-pending" class="hx-col-body"></div>
+                    </div>
+                    <div class="hx-board-col" data-status="in_progress">
+                        <h4>进行中 <span id="hx-cnt-progress">0</span></h4>
+                        <div id="hx-col-progress" class="hx-col-body"></div>
+                    </div>
+                    <div class="hx-board-col" data-status="completed">
+                        <h4>已完成 <span id="hx-cnt-completed">0</span></h4>
+                        <div id="hx-col-completed" class="hx-col-body"></div>
+                    </div>
+                    <div class="hx-board-col" data-status="failed">
+                        <h4>异常 / 阻塞 <span id="hx-cnt-failed">0</span></h4>
+                        <div id="hx-col-failed" class="hx-col-body"></div>
+                    </div>
+                </section>
+
+                <section class="hx-panel">
+                    <div class="hx-panel-head">
+                        <h3>运行时间线</h3>
+                        <span id="hx-event-count" class="hx-muted">0 事件</span>
+                    </div>
+                    <div id="hx-timeline" class="hx-timeline"></div>
+                </section>
+
+                <section class="hx-panel">
+                    <div class="hx-panel-head">
+                        <h3>最终报告</h3>
+                        <button id="hx-open-report" class="hx-btn ghost small" disabled>全屏查看</button>
+                    </div>
+                    <div id="hx-report" class="hx-report hx-empty">运行完成后在此展示最终分析报告</div>
+                </section>
+            </main>
+
+            <!-- 右侧检查器 -->
+            <aside class="hx-inspector">
+                <div class="hx-tabs">
+                    <button class="hx-tab active" data-tab="approvals">审批 <span id="hx-badge-approvals" class="hx-badge hidden">0</span></button>
+                    <button class="hx-tab" data-tab="files">文件</button>
+                    <button class="hx-tab" data-tab="skills">技能</button>
+                    <button class="hx-tab" data-tab="traces">追踪</button>
+                    <button class="hx-tab" data-tab="memory">记忆</button>
+                </div>
+                <div class="hx-pane active" data-pane="approvals">
+                    <div id="hx-approvals" class="hx-pane-body hx-empty">暂无待审批动作</div>
+                </div>
+                <div class="hx-pane" data-pane="files">
+                    <div id="hx-files" class="hx-pane-body hx-empty">选择运行后查看工作资产</div>
+                </div>
+                <div class="hx-pane" data-pane="skills">
+                    <div id="hx-skills" class="hx-pane-body hx-empty">加载技能库…</div>
+                </div>
+                <div class="hx-pane" data-pane="traces">
+                    <div id="hx-traces" class="hx-pane-body hx-empty">选择运行后查看链路</div>
+                </div>
+                <div class="hx-pane" data-pane="memory">
+                    <div class="hx-pane-body">
+                        <div class="hx-search-row">
+                            <input id="hx-memory-q" placeholder="检索长期经验…">
+                            <button id="hx-memory-search" class="hx-btn ghost small">搜索</button>
+                        </div>
+                        <div id="hx-memory" class="hx-empty">输入关键字检索长期记忆</div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- 新建运行 -->
+    <div id="hx-modal-new" class="hx-modal hidden">
+        <div class="hx-modal-card">
+            <div class="hx-modal-head">
+                <h3>新建 Harness 运行</h3>
+                <button class="hx-modal-close" data-close="hx-modal-new">&times;</button>
+            </div>
+            <p class="hx-muted">描述业务问题即可，主 Agent 会自动拆解任务并委派给专业子 Agent。</p>
+            <textarea id="hx-objective" rows="5" placeholder="例如：分析 R_RISK_001 规则上线后出现的误杀问题，给出调整建议、回归测试与效果对比结论"></textarea>
+            <div class="hx-chips">
+                <button class="hx-chip" data-sample="分析 R_RISK_001 规则上线后出现的误杀问题，给出调整建议、回归测试与效果对比结论">误杀排查</button>
+                <button class="hx-chip" data-sample="评估 R_TXN_014 大额交易规则调整方案，完成回测并生成灰度审批材料">规则调整 + 灰度</button>
+                <button class="hx-chip" data-sample="核查 device_risk_score 与 same_device_user_count_7d 的分布漂移，判断是否影响拦截效果">特征漂移分析</button>
+            </div>
+            <div id="hx-new-error" class="hx-error"></div>
+            <div class="hx-modal-actions">
+                <button class="hx-btn ghost" data-close="hx-modal-new">取消</button>
+                <button id="hx-create-run" class="hx-btn primary">启动运行</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用查看器 -->
+    <div id="hx-modal" class="hx-modal hidden">
+        <div class="hx-modal-card wide">
+            <div class="hx-modal-head">
+                <h3 id="hx-modal-title">详情</h3>
+                <button class="hx-modal-close" data-close="hx-modal">&times;</button>
+            </div>
+            <div id="hx-modal-body" class="hx-modal-body"></div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/lib/marked.min.js"></script>
+    <script src="/static/lib/highlight.min.js"></script>
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script src="/static/js/markdown.js"></script>
+    <script src="/static/js/harness.js"></script>
+</body>
+</html>

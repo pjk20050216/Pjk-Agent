@@ -1,5 +1,6 @@
 """熔断器状态机 —— 保护外部 API 调用，三种状态：CLOSED → OPEN → HALF_OPEN。"""
 import asyncio
+import inspect
 import time
 from enum import Enum
 from server.utils.logger import logger
@@ -35,6 +36,10 @@ class CircuitBreaker:
         await self._maybe_transition()
 
         if self._state == CircuitState.OPEN:
+            # 调用方通常先创建协程再传入；熔断时协程不会被执行，
+            # 必须显式 close，否则会触发 "coroutine was never awaited" 警告。
+            if inspect.iscoroutine(coro):
+                coro.close()
             raise CircuitBreakerOpenError(
                 f"Circuit [{self.name}] is OPEN — temporarily unavailable"
             )

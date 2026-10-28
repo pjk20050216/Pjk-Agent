@@ -24,7 +24,7 @@ from gateway.config import (
 
 # 公开路径 —— 无需 JWT 验证即可访问（精确匹配）
 PUBLIC_EXACT = {
-    "/", "/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json", "/favicon.ico",
+    "/", "/harness", "/docs", "/docs/oauth2-redirect", "/redoc", "/openapi.json", "/favicon.ico",
     "/api/auth/register", "/api/auth/login", "/api/auth/refresh",
     "/api/models",
 }

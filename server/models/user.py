@@ -27,3 +27,4 @@ class User(Base):
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
     agent_runs = relationship("AgentRun", back_populates="user", cascade="all, delete-orphan")
+    harness_runs = relationship("HarnessRun", back_populates="user", cascade="all, delete-orphan")

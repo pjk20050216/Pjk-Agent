@@ -21,7 +21,10 @@ class Base(DeclarativeBase):
 
 def init_db():
     """应用启动时自动创建所有数据库表（如果不存在）。"""
-    from server.models import User, Conversation, Message, Document, AgentRun  # noqa: F401
+    from server.models import (  # noqa: F401
+        User, Conversation, Message, Document, AgentRun,
+        HarnessRun, HarnessApproval,
+    )
     Base.metadata.create_all(bind=engine)
 
 

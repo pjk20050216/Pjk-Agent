@@ -1,0 +1,9 @@
+# Harness 可选依赖（基础功能不依赖它们，缺失时自动降级）
+#
+# 安装：
+#   uv pip install -r requirements-harness.txt
+#
+# - pymilvus：长期记忆向量库（Milvus）。未安装时降级为本地 JSONL + 关键词检索。
+# - aiokafka：审计/链路事件上报公司 Kafka。未安装时落 data/harness/audit 本地缓冲。
+pymilvus>=2.4.0
+aiokafka>=0.10.0

@@ -80,6 +80,25 @@ for mod in ("server.main", "gateway.main"):
     except Exception as e:
         check(f"import {mod}", False, f"{type(e).__name__}: {e}")
 
+# Harness 运行时各层（导入期不连接 Redis / Milvus / Kafka / OpenSandbox）
+for mod in (
+    "harness.config",
+    "harness.contracts",
+    "harness.vfs.store",
+    "harness.skills.registry",
+    "harness.middleware.base",
+    "harness.middleware.builtin",
+    "harness.tools",
+    "harness.agents",
+    "harness.runtime",
+    "harness.api.router",
+):
+    try:
+        importlib.import_module(mod)
+        check(f"import {mod}", True)
+    except Exception as e:
+        check(f"import {mod}", False, f"{type(e).__name__}: {e}")
+
 # --------------------------------------------------------------------------
 print()
 print("=" * 70)
@@ -98,6 +117,27 @@ try:
                    if not p.get(k)]
         check(f"provider {p.get('name')!r} 字段完整", not missing,
               "" if not missing else f"缺 {missing}")
+
+    harness_cfg = cfg.get("harness", {})
+    check("settings.yaml 含 harness 段", isinstance(harness_cfg, dict) and bool(harness_cfg))
+    for key in (
+        "workspace_root", "skills_dir", "context", "memory", "sandbox",
+        "milvus", "kafka", "approvals", "tracing", "java_bridge", "web",
+    ):
+        check(f"harness.{key} 已配置", key in harness_cfg)
+    sandbox_provider = harness_cfg.get("sandbox", {}).get("provider", "")
+    check(
+        f"harness.sandbox.provider={sandbox_provider!r} 合法",
+        sandbox_provider in {"opensandbox", "local"},
+    )
+    required_actions = harness_cfg.get("approvals", {}).get("required_actions", [])
+    check(
+        "高风险动作已纳入审批",
+        {"rule.publish", "rule.gray_release", "sandbox.exec"}.issubset(
+            set(required_actions)
+        ),
+        f"实际: {required_actions}",
+    )
 except Exception as e:
     check("settings.yaml 可解析", False, f"{type(e).__name__}: {e}")
 
@@ -112,8 +152,35 @@ check(f"前端 JS 模块存在（{len(js_files)} 个）", len(js_files) >= 8)
 empty = [p.name for p in js_files if p.stat().st_size == 0]
 check("无空 JS 文件", not empty, "" if not empty else str(empty))
 for asset in ("static/index.html", "static/css/style.css",
-              "static/lib/marked.min.js", "static/lib/highlight.min.js"):
+              "static/lib/marked.min.js", "static/lib/highlight.min.js",
+              "static/harness.html", "static/css/harness.css", "static/js/harness.js"):
     check(f"{asset} 存在", (ROOT / asset).exists())
+check("Harness 控制台 JS 非空",
+      (ROOT / "static" / "js" / "harness.js").exists()
+      and (ROOT / "static" / "js" / "harness.js").stat().st_size > 1000)
+
+# --------------------------------------------------------------------------
+print()
+print("=" * 70)
+print("4b) Skills 技能与 Java 扩展桥")
+print("=" * 70)
+skill_files = sorted((ROOT / "skills").glob("*/SKILL.md"))
+check(f"技能文件存在（{len(skill_files)} 个）", len(skill_files) >= 5)
+for skill_file in skill_files[:8]:
+    text = skill_file.read_text(encoding="utf-8")
+    check(f"技能 {skill_file.parent.name} 含 frontmatter", text.startswith("---"))
+    check(f"技能 {skill_file.parent.name} 含 name", "name:" in text[:400])
+
+for asset in (
+    "java-bridge/pom.xml",
+    "java-bridge/README.md",
+    "java-bridge/src/main/java/com/devflow/harness/spi/HarnessTool.java",
+    "java-bridge/src/main/java/com/devflow/harness/web/HarnessToolController.java",
+):
+    check(f"{asset} 存在", (ROOT / asset).exists())
+
+test_files = sorted((ROOT / "tests").glob("test_*.py"))
+check(f"测试文件存在（{len(test_files)} 个）", len(test_files) >= 5)
 
 # --------------------------------------------------------------------------
 print()
@@ -128,6 +195,9 @@ for p in ROOT.rglob("*"):
     if not p.is_file():
         continue
     if any(part in p.parts for part in (".venv", "__pycache__", ".git", "chroma_db")):
+        continue
+    rel = p.relative_to(ROOT).as_posix()
+    if rel.startswith(("data/harness/", "data/traces/", "java-bridge/target/")):
         continue
     if p.name == ".env":          # .env 本身含密钥属预期，且已被 .gitignore 排除
         continue

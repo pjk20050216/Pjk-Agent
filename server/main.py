@@ -59,8 +59,29 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Failed to probe external retrieval services: {e}")
 
+    # 初始化 Agent Harness 运行时（不阻塞：外部依赖均懒连接 + 降级）
+    try:
+        from harness.runtime import get_harness
+
+        agent_harness = get_harness()
+        logger.info(
+            f"Harness runtime ready: {len(agent_harness.skills)} skills, "
+            f"parallel={agent_harness.config.max_parallel_subagents}, "
+            f"workspace={agent_harness.config.workspace_root}"
+        )
+    except Exception as e:
+        logger.warning(f"Failed to initialize harness runtime: {e}")
+
     # yield 之前的代码会在应用启动前执行，之后的代码会在应用关闭时执行
     yield
+
+    # Shutdown: 关闭 Harness 后台任务 / 沙箱 / Java 桥
+    try:
+        from harness.runtime import get_harness
+
+        await get_harness().shutdown()
+    except Exception:
+        pass
 
     # Shutdown: 关闭 Redis / ES / 联网客户端连接
     try:
@@ -80,7 +101,7 @@ async def lifespan(app: FastAPI):
 
 # FastAPI 应用实例
 app = FastAPI(
-    title="DevFlow AI Backend",
+    title="风控策略智能运维多智能体系统",
     version="0.2.0",
     lifespan=lifespan,
     docs_url=None if settings.behind_gateway else "/docs",
@@ -104,12 +125,14 @@ from server.routers.chat import router as chat_router
 from server.routers.documents import router as documents_router
 from server.routers.models import router as models_router
 from server.routers.agent import router as agent_router
+from harness.api.router import router as harness_router
 app.include_router(auth_router)
 app.include_router(conversations_router)
 app.include_router(chat_router)
 app.include_router(documents_router)
 app.include_router(models_router)
 app.include_router(agent_router)
+app.include_router(harness_router)
 
 # 挂载前端静态文件目录（CSS、JS、第三方库）
 static_dir = PROJECT_ROOT / "static"
@@ -124,4 +147,14 @@ async def root():
     index_path = static_dir / "index.html"
     if index_path.exists():
         return FileResponse(str(index_path))
-    return HTMLResponse("<h1>DevFlow AI</h1><p>Server is running. Visit <a href='/docs'>/docs</a> for API documentation.</p>")
+    return HTMLResponse("<h1>风控策略智能运维多智能体系统</h1><p>Server is running. Visit <a href='/docs'>/docs</a> for API documentation.</p>")
+
+
+@app.get("/harness")
+async def harness_console():
+    """Harness 控制台 —— 任务板、事件流、审批、文件、技能与追踪。"""
+    from fastapi.responses import FileResponse, HTMLResponse
+    page = static_dir / "harness.html"
+    if page.exists():
+        return FileResponse(str(page))
+    return HTMLResponse("<h1>Harness Console</h1><p>static/harness.html not found.</p>")

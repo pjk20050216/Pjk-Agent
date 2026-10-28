@@ -1,4 +1,4 @@
-"""DevFlow API 网关 —— 统一入口（对外端口 8000），负责 JWT 认证、限流、代理转发。"""
+"""风控策略智能运维多智能体系统 API 网关 —— 统一入口（对外端口 8000），负责 JWT 认证、限流、代理转发。"""
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from gateway.middleware import (
@@ -10,7 +10,7 @@ from gateway.proxy import proxy_request
 from gateway.config import LLM_CONCURRENCY_LIMIT
 
 app = FastAPI(
-    title="DevFlow AI Gateway",
+    title="风控策略智能运维多智能体系统网关",
     version="0.2.0",
 )
 

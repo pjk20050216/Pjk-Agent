@@ -1,4 +1,4 @@
-# DevFlow 本地 Elasticsearch（单节点 + IK 中文分词），供 RAG 混合检索使用。
+# 本地 Elasticsearch（单节点 + IK 中文分词），供 RAG 混合检索使用。
 #
 # 用法：
 #   cd docker

@@ -4,6 +4,9 @@ __pycache__/
 .idea/
 chroma_db/
 data/app.db
+data/harness/
+data/traces/
+java-bridge/target/
 data/uploads/*
 !data/uploads/.gitkeep
 logs/*

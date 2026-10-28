@@ -4,6 +4,33 @@
 
 ## [Unreleased]
 
+### 新增 —— 风控策略智能运维多智能体系统
+
+- **多智能体编排**：主 Agent 生成任务清单，按依赖分层异步委派给 6 个专业子 Agent
+  （特征分析 / 规则配置 / 测试验证 / 异常排查 / 知识检索 / 数据采集），支持并发、重试、阻塞与恢复。
+- **数据采集子 Agent**：`web_search` 发现公开来源、`web_fetch` 抓取网页正文、
+  `dataset_write` 落结构化数据集；原始快照与报告进 VFS；带 SSRF/域名/端口/内容类型/
+  大小/超时限制；搜索不可用时回退内部规则库并明确标注。
+- **任务状态机**：`pending / in_progress / waiting_approval / completed / failed / blocked / skipped`，
+  每次变更落库并发事件，支持 SSE 回放与跨会话恢复。
+- **虚拟文件系统**：`/workspace /reports /logs /policies /skills /memories /sandbox`，
+  支持读写、精确编辑、搜索、版本历史与 diff；host / sandbox 双层平面，产物需审批晋升。
+- **上下文管理**：大结果与日志落 VFS，子 Agent 只回传摘要与文件引用，降低主上下文污染。
+- **可插拔中间件**：缓存、重试、权限、PII 脱敏、敏感动作审批、链路追踪、Kafka 审计，
+  通过 `before / around / after` Hook 组合。
+- **Skills 渐进式披露**：元数据 → 正文 → 资源三级加载，内置 6 个风控技能。
+- **全生命周期记忆**：Redis 短期（对话/计划/审批断点）+ Milvus 长期（经验/模板/偏好/案例），
+  任务结束自动复盘蒸馏；Milvus/Redis 不可用时本地降级。
+- **安全沙箱**：OpenSandbox 适配 + 本地受限子进程回退，命令白名单、高危拦截、超时整组 kill、
+  输出截断、网络代理阻断、文件平面隔离。
+- **人工审批**：规则发布、灰度、沙箱执行、文件晋升等高风险动作挂起审批；
+  同进程 Event + 跨进程 SQLite 轮询，超时自动拒绝。
+- **链路追踪与审计**：请求/规划/委派/记忆/工具/文件/审批全埋点，JSONL + Kafka 双通道，
+  Kafka 不可用时本地缓冲。
+- **Java 扩展桥**：Spring Boot SPI + 工具清单 + HMAC 校验，Python 自动发现并纳入审批/审计。
+- **控制台**：`/harness` 任务板、实时时间线、审批、文件版本、技能、追踪、记忆。
+- **测试与 CI**：42 个离线单元/端到端测试；静态检查新增 Harness 模块、技能、控制台、Java 桥检查。
+
 ### 修复 —— 阻塞性故障
 
 - **配置文件未加载 `.env`**（`server/config.py`）

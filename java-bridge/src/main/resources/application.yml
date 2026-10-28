@@ -1,0 +1,15 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: harness-java-bridge
+
+harness:
+  bridge:
+    # 与 Python 侧 HARNESS_JAVA_SHARED_SECRET 保持一致；为空则不校验（仅本地开发）
+    shared-secret: ${HARNESS_JAVA_SHARED_SECRET:}
+
+logging:
+  level:
+    com.devflow.harness: INFO
